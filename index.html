@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <title>AI मल्टीवॉइस टेक्स्ट टू स्पीच कन्वर्टर</title>
+    <style>
+        /* कस्टम CSS स्टाइलिंग */
+        .voice-controls { 
+            background: #f0f4ff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .ssml-editor {
+            border: 2px dashed #4CAF50;
+            padding: 15px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>मल्टी-भाषा AI वॉइस जनरेटर</h1>
+        
+        <!-- टेक्स्ट इनपुट सेक्शन -->
+        <div class="input-section">
+            <textarea id="inputText" rows="6" placeholder="यहां टेक्स्ट पेस्ट करें..."></textarea>
+        </div>
+
+        <!-- वॉइस कंट्रोल पैनल -->
+        <div class="voice-controls">
+            <div class="language-selector">
+                <label>भाषा चुनें:</label>
+                <select id="language">
+                    <option value="hi-IN">हिंदी</option>
+                    <option value="en-US">अंग्रेजी</option>
+                    <option value="es-ES">स्पेनिश</option>
+                    <!-- और भाषाएं जोड़ें -->
+                </select>
+            </div>
+
+            <!-- वॉइस प्रोफाइल एडिटर -->
+            <div class="voice-editor">
+                <h3>वॉइस सेटिंग्स:</h3>
+                <div class="ssml-editor">
+                    <label>पिच:</label>
+                    <input type="range" id="pitch" min="0" max="2" step="0.1" value="1">
+                    
+                    <label>गति:</label>
+                    <input type="range" id="speed" min="0.5" max="2" step="0.1" value="1">
+                    
+                    <label>भावना:</label>
+                    <select id="emotion">
+                        <option value="neutral">सामान्य</option>
+                        <option value="happy">खुश</option>
+                        <option value="sad">उदास</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- मल्टीवॉइस मैनेजमेंट -->
+        <div class="multi-voice">
+            <button onclick="addNewVoice()">नई वॉइस जोड़ें +</button>
+            <div id="voiceProfiles"></div>
+        </div>
+
+        <!-- ऑडियो आउटपुट -->
+        <div class="output-section">
+            <button onclick="generateSpeech()">ऑडियो जनरेट करें</button>
+            <audio id="audioPlayer" controls></audio>
+        </div>
+    </div>
+
+    <script>
+        // Speechify API इंटीग्रेशन [citation:3]
+        const API_KEY = 'YOUR_SPEECHIFY_API_KEY';
+        let voices = [];
+
+        async function loadVoices() {
+            const response = await fetch('https://api.speechify.com/voices');
+            voices = await response.json();
+        }
+
+        // वॉइस जनरेशन फंक्शन
+        async function generateSpeech() {
+            const text = document.getElementById('inputText').value;
+            const language = document.getElementById('language').value;
+            const pitch = document.getElementById('pitch').value;
+            const speed = document.getElementById('speed').value;
+            const emotion = document.getElementById('emotion').value;
+
+            const ssml = `<speak>
+                <prosody pitch="${pitch}st" rate="${speed}">${text}</prosody>
+                <amazon:emotion name="${emotion}" intensity="high">
+                    ${text}
+                </amazon:emotion>
+            </speak>`;
+
+            const response = await fetch('https://api.speechify.com/v1/speech', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${API_KEY}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    text: ssml,
+                    voice: 'selected_voice_id',
+                    format: 'mp3'
+                })
+            });
+
+            const audioBlob = await response.blob();
+            document.getElementById('audioPlayer').src = URL.createObjectURL(audioBlob);
+        }
+
+        // मल्टीवॉइस मैनेजमेंट [citation:1][citation:5]
+        function addNewVoice() {
+            const voiceProfile = `
+                <div class="voice-profile">
+                    <select class="voice-select">
+                        ${voices.map(voice => 
+                            `<option value="${voice.id}">${voice.name} (${voice.language})</option>`
+                        ).join('')}
+                    </select>
+                    <input type="color" class="voice-color" value="#ff0000">
+                </div>`;
+            document.getElementById('voiceProfiles').innerHTML += voiceProfile;
+        }
+
+        // इनिशियलाइजेशन
+        loadVoices();
+    </script>
+</body>
+</html>
